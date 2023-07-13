@@ -5,6 +5,7 @@ import { useSetRecoilState } from 'recoil';
 
 import { patchReadingClassChange } from '@/api/recruit';
 import { selectRecruitStatusAtom } from '@/recoil/modal';
+import { GroupList } from '@/types/recruit';
 
 interface RecruitmentModalType {
   groupId: number;
@@ -28,12 +29,27 @@ const ModalOverlay = ({ groupId, recruitmentStatus }: RecruitmentModalType) => {
   const { mutate: updateRecruitmentStatus } = useMutation(
     patchReadingClassChange,
     {
-      onSuccess: () => {
-        setModal(false);
-        return queryClient.invalidateQueries([
+      onMutate: async ({ groupData }) => {
+        const oldData: GroupList | undefined = queryClient.getQueryData([
           'recruitDetail',
           String(groupId),
         ]);
+
+        await queryClient.cancelQueries(['recruitDetail', String(groupId)]);
+
+        if ('recruitment_status' in groupData) {
+          queryClient.setQueryData(['recruitDetail', String(groupId)], {
+            ...oldData,
+            recruitment_status: groupData.recruitment_status,
+          });
+        }
+
+        setModal(false);
+        return () =>
+          queryClient.setQueryData(['recruitDetail', String(groupId)], oldData);
+      },
+      onError: (error, variable, rollback) => {
+        if (rollback) return rollback();
       },
     },
   );
@@ -86,7 +102,7 @@ const ModalOverlay = ({ groupId, recruitmentStatus }: RecruitmentModalType) => {
   return (
     <>
       <div className='fixed left-0 right-0 w-5/6 max-w-lg bg-[#F3F3F3] h-40 z-30 rounded-2xl bottom-24 animate-slideUp mx-auto'>
-        <div className='flex flex-col justify-center items-center divide-y'>
+        <div className='flex flex-col items-center justify-center divide-y'>
           <p className='h-11 flex justify-center items-center text-[#707070] text-clamSm'>
             상태 변경
           </p>
@@ -95,7 +111,7 @@ const ModalOverlay = ({ groupId, recruitmentStatus }: RecruitmentModalType) => {
       </div>
       <button
         onClick={() => setModal(false)}
-        className='fixed left-0 right-0 w-5/6 max-w-lg bg-white h-14 z-30 rounded-2xl bottom-8 mx-auto text-clampLg text-main animate-slideUp'
+        className='fixed left-0 right-0 z-30 w-5/6 max-w-lg mx-auto bg-white h-14 rounded-2xl bottom-8 text-clampLg text-main animate-slideUp'
       >
         닫기
       </button>
