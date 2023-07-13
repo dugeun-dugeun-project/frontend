@@ -57,6 +57,12 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
     setHydrated(true);
   }, []);
 
+  useEffect(() => {
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+  }, []);
+
   if (!hydrated) return null;
 
   const getLayout =
