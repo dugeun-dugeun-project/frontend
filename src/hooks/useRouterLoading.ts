@@ -4,12 +4,18 @@ import { useEffect, useState } from 'react';
 export const useLoading = () => {
   const [nowLoading, setNowLoading] = useState(false);
   useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+
     const start = () => {
-      setNowLoading(true);
+      timer = setTimeout(() => {
+        setNowLoading(true);
+      }, 500);
     };
     const end = () => {
+      clearTimeout(timer);
       setNowLoading(false);
     };
+
     Router.events.on('routeChangeStart', start);
     Router.events.on('routeChangeComplete', end);
     Router.events.on('routeChangeError', end);
