@@ -8,6 +8,7 @@ import {
 import type { AppProps } from 'next/app';
 import { Lato, Noto_Sans_KR } from 'next/font/google';
 import localFont from 'next/font/local';
+import { useRouter } from 'next/router';
 import React, { ReactElement, useEffect, useState } from 'react';
 import { RecoilRoot } from 'recoil';
 
@@ -15,6 +16,7 @@ import LoginModal from '@/components/auth/LoginModal';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { useLoading } from '@/hooks/useRouterLoading';
 import Layout from '@/layout/Layout';
+import { pageview } from '@/lib/gtag';
 import { NextPageWithLayout } from '@/types/layout';
 
 interface AppPropsWithLayout extends AppProps {
@@ -52,10 +54,21 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
       }),
   );
   const [hydrated, setHydrated] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     setHydrated(true);
   }, []);
+
+  useEffect(() => {
+    const handleRouteChange = (url: URL) => {
+      pageview(url);
+    };
+    router.events.on('routeChangeComplete', handleRouteChange);
+    return () => {
+      router.events.off('routeChangeComplete', handleRouteChange);
+    };
+  }, [router.events]);
 
   if (!hydrated) return null;
 
